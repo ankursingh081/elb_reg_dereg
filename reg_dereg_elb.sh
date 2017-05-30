@@ -28,7 +28,6 @@ which jq >/dev/null || {
 case "$1" in
     --put-metrics )
         loadData;
-        cloudWatchPut;
         ;;
     --perform )
         perform;
