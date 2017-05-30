@@ -3,9 +3,6 @@
 set -e
 
 SELF="$(basename $0)"
-TMP_CLOUDWATCH_JSON="/tmp/${SELF}.json";
-START="$(date --date '-5 minutes')"; 
-END="$(date)";
 
 usage() {
     cat <<USAGE
@@ -49,44 +46,31 @@ esac
             done
         echo
 	}
-
-
-loadData() {
-    echo >&2 "loading data..."
-    aws elb describe-load-balancers \
-     | jq -r ' 
-        .LoadBalancerDescriptions[] 
-        | {LoadBalancerName, AvailabilityZones} 
-        | (.|@json) ' \
-     | while read json; do
-        NAME=$(echo "$json" | jq -r .LoadBalancerName); 
-        echo "$json" | genAgregatedMetricData "$NAME" "HealthyHostCount"
-        echo "$json" | genAgregatedMetricData "$NAME" "UnHealthyHostCount"
-    done \
-    | jq -s '.' \
-    | tee $TMP_CLOUDWATCH_JSON
-}
-
-
-
 perform() {
     echo "1. Add Instance"
     echo "2. Remove Instance"
-    read $input
+    read input
     
     echo "Enter Load Balancer  Name"
-    aws elb describe-load-balancer
-    read $lbname
+    aws elb describe-load-balancers | jq -r '.LoadBalancerDescriptions[].LoadBalancerName'
+    read lbname
 
 
     if [ $input==1 ]; then
-        echo "Provide the instance id Of Instance to Add"
-        read $instanceids
-    
+echo "$lbname"
+echo "INSTANCE INSIDE THE SELECTED ELB"
+        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'
+
+	echo "Provide the instance id Of Instance to Add"
+        
+#	read $instanceids
+
+#	if [ $instanceids -ne "aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'" ]; then
+
         getState () {
             aws elb describe-instance-health \
                 --load-balancer-name $lbname \
-                --instance $instanceids | jq '.InstanceStates[0].State' -r
+                --instance $instanceids | jq '.InstanceStates[].State' -r
         }
 
         register () {
@@ -125,3 +109,5 @@ perform() {
     waitUntil "OutOfService"
 	fi
 }
+
+main "$@"
