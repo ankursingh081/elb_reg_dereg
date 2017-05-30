@@ -9,7 +9,7 @@ END="$(date)";
 
 usage() {
     cat <<USAGE
-Usage: $SELF [ --show | --put-metrics ]
+Usage: $SELF [ --show | --perform | --put-metrics ]
 USAGE
 }
 
@@ -41,8 +41,18 @@ case "$1" in
 esac
 }
 
-perform()
-{
+        waitUntil () {
+            echo -n "Wait until state is $1"
+            while [ "$(getState)" != "$1" ]; do
+                echo -n "."
+                sleep 1
+            done
+        echo
+	}
+
+
+
+perform() {
     echo "1. Add Instance"
     echo "2. Remove Instance"
     read $input
@@ -52,7 +62,7 @@ perform()
     read $lbname
 
 
-    if[input==1]; then
+    if [ $input==1 ]; then
         echo "Provide the instance id Of Instance to Add"
         read $instanceids
     
@@ -80,7 +90,7 @@ perform()
         sleep 1
     fi
     
-    if[input==2]; then
+    if [ $input==2 ]; then
     
         echo "Instance in selected ELB"
         aws elb describe-load-balancers --load-balancer-name $lbname | jq -r `.LoadBalancerDescriptions[].Instances[].Instanceid`
@@ -96,13 +106,5 @@ perform()
     deregister >> /dev/null
 
     waitUntil "OutOfService"
-        
-        waitUntil () {
-            echo -n "Wait until state is $1"
-            while [ "$(getState)" != "$1" ]; do
-                echo -n "."
-                sleep 1
-            done
-        echo
-}
+	fi
 }
