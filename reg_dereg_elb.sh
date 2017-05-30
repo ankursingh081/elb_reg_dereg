@@ -51,6 +51,23 @@ esac
 	}
 
 
+loadData() {
+    echo >&2 "loading data..."
+    aws elb describe-load-balancers \
+     | jq -r ' 
+        .LoadBalancerDescriptions[] 
+        | {LoadBalancerName, AvailabilityZones} 
+        | (.|@json) ' \
+     | while read json; do
+        NAME=$(echo "$json" | jq -r .LoadBalancerName); 
+        echo "$json" | genAgregatedMetricData "$NAME" "HealthyHostCount"
+        echo "$json" | genAgregatedMetricData "$NAME" "UnHealthyHostCount"
+    done \
+    | jq -s '.' \
+    | tee $TMP_CLOUDWATCH_JSON
+}
+
+
 
 perform() {
     echo "1. Add Instance"
