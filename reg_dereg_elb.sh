@@ -64,6 +64,13 @@ echo "Dispatcher instances inside the selected Load Balancer"
 	echo "Provide the instance-id Of Instance to Add"
         
 	read $instanceids
+    if [ $? != 0 -o -z "aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'" ]; then
+    error_exit "Unable to get this instance's ID; cannot continue."
+    fi
+    
+    
+    
+    
 
 #	if [ $instanceids -ne "aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'" ]; then
     echo "Checking Status of the inastance"
