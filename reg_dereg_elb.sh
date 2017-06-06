@@ -57,15 +57,16 @@ perform() {
 
 
     if [ $input==1 ]; then
-echo "$lbname"
-echo "INSTANCE INSIDE THE SELECTED ELB"
+
+echo "Dispatcher instances inside the selected Load Balancer"
         aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'
 
-	echo "Provide the instance id Of Instance to Add"
+	echo "Provide the instance-id Of Instance to Add"
         
-#	read $instanceids
+	read $instanceids
 
 #	if [ $instanceids -ne "aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'" ]; then
+    echo "Checking Status of the inastance"
 
         getState () {
             aws elb describe-instance-health \
@@ -85,10 +86,10 @@ echo "INSTANCE INSIDE THE SELECTED ELB"
 
         waitUntil "InService"
 
-        lburl = aws elb describe-load-balancers --load-balancer-name $lbname | jq -r `.LoadBalancerDescriptions[].DNSName`
+        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r `.LoadBalancerDescriptions[].DNSName`
     
-        curl $lburl &
-        sleep 1
+#        curl $lburl &
+#        sleep 1
     fi
     
     if [ $input==2 ]; then
