@@ -86,16 +86,16 @@ echo "Dispatcher instances inside the selected Load Balancer"
 
         waitUntil "InService"
 
-        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r `.LoadBalancerDescriptions[].DNSName`
+        lburl = aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'
     
-#        curl $lburl &
-#        sleep 1
+        curl $lburl &
+        sleep 1
     fi
     
     if [ $input==2 ]; then
     
         echo "Instance in selected ELB"
-        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r `.LoadBalancerDescriptions[].Instances[].Instanceid`
+        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].Instanceid'
         echo "Provide the Instance-Id"
         read $InstanceID
         
