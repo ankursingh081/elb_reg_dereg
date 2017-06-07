@@ -67,21 +67,13 @@ echo
         
         listinstance = "aws ec2 describe-instances |jq -r '.Reservations[].Instances[].InstanceId'"
         
-        for  i in "${listinstance[@]}"
+        while read $instanceids
         do
-        if [ ${i} != $instanceids ]; then
-        read $instanceids
+        if [ $instanceids != listinstance ]
+        echo "Instance id is innorrect.. Try Again.."
+        read instanceids
+        done
     
-    
-#    if [ $? != 0 -o -z "aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'" ]; then
-#    error_exit "Unable to get this instance's ID; cannot continue."
-#    fi
-    
-    
-    
-    
-
-#	if [ $instanceids -ne "aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'" ]; then
     echo "Checking Status of the instance"
 
         getState () {
