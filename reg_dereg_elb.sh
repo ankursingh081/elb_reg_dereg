@@ -99,7 +99,7 @@ break
 
         waitUntil "InService"
 
-        lburl = aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'
+        lburl=`aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'`
     
         curl $lburl &
         sleep 1
