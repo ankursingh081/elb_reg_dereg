@@ -56,7 +56,7 @@ perform() {
     read lbname
 
 
-    if [ $input == 1 ]; then
+    if [ $input==1 ]; then
 
 echo "Dispatcher instances inside the selected Load Balancer"
         aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'
@@ -65,16 +65,20 @@ echo
         
         aws ec2 describe-instances |jq -r '.Reservations[].Instances[] | [.InstanceId, .ClientToken]| @json'
         
-        listinstance = "aws ec2 describe-instances |jq -r '.Reservations[].Instances[].InstanceId'"
-        
-        while read $instanceids
+        listinstance=`aws ec2 describe-instances |jq -r '.Reservations[].Instances[].InstanceId'`
+      
+ echo $listinstance 
+        while read instanceids
         do
-        if [ $instanceids != $listinstance ]; then
-        echo "Instance id is innorrect.. Try Again.."
-        read instanceids
-        fi
-        done
-    
+		for i in ${listinstance[@]}
+		do
+			echo $i
+        		if [ $instanceids != $i ]; then
+        		echo "Instance id is innorrect.. Try Again.."
+       	 		fi
+		done
+break
+    	done
     echo "Checking Status of the instance"
 
         getState () {
