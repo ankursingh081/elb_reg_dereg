@@ -86,6 +86,22 @@ break
                 --instance $instanceids | jq .
         }
         
+    elif [ $input==2 ]; then
+    
+        echo "Instance in selected ELB"
+        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].Instanceid'
+        echo "Provide the Instance-Id"
+        read $InstanceID
+        
+        deregister () {
+        aws elb deregister-instances-from-load-balancer \
+            --load-balancer-name $lbname \
+            --instance $InstanceID | jq .
+        }
+
+    
+	fi
+        
         waitUntil () {
             echo -n "Wait until state is $1"
             while [ "$(getState)" != "$1" ]; do
@@ -105,25 +121,12 @@ break
     
         curl $lburl &
         sleep 1
-    
-    
-    elif [ $input==2 ]; then
-    
-        echo "Instance in selected ELB"
-        aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].Instanceid'
-        echo "Provide the Instance-Id"
-        read $InstanceID
         
-        deregister () {
-        aws elb deregister-instances-from-load-balancer \
-            --load-balancer-name $lbname \
-            --instance $InstanceID | jq .
-        }
-
     deregister >> /dev/null
 
     waitUntil "OutOfService"
-	fi
+    
+    
 }
 
 main "$@"
