@@ -38,14 +38,7 @@ case "$1" in
 esac
 }
 
-        waitUntil () {
-            echo -n "Wait until state is $1"
-            while [ "$(getState)" != "$1" ]; do
-                echo -n "."
-                sleep 1
-            done
-        echo
-	}
+        
 perform() {
     echo "1. Add Instance"
     echo "2. Remove Instance"
@@ -92,6 +85,15 @@ break
                 --load-balancer-name $lbname \
                 --instance $instanceids | jq .
         }
+        
+        waitUntil () {
+            echo -n "Wait until state is $1"
+            while [ "$(getState)" != "$1" ]; do
+                echo -n "."
+                sleep 1
+            done
+        echo
+	}
     
         if [ "$(getState)" == "OutOfService" ]; then
             register >> /dev/null
