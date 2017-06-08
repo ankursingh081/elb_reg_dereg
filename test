@@ -1,1 +1,0 @@
-aws elb describe-instance-health --load-balancer-name ankur-test-b50-2 --instance i-06d8e476597896b23 | jq '.InstanceStates[].State' -r
