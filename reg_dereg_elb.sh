@@ -96,7 +96,7 @@ echo "Registering"
          deregister () {
         aws elb deregister-instances-from-load-balancer \
             --load-balancer-name $lbname \
-            --instance $InstanceID | jq .
+            --instance $instanceids | jq .
         }
 
     elif [ $input==2 ]; then
