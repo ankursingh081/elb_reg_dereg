@@ -105,9 +105,9 @@ break
     
         curl $lburl &
         sleep 1
-    fi
     
-    if [ $input==2 ]; then
+    
+    elif [ $input==2 ]; then
     
         echo "Instance in selected ELB"
         aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].Instanceid'
