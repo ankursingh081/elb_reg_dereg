@@ -70,6 +70,10 @@ echo "Registering"
         }
         
 perform() {
+
+echo "Enter Region"
+read region
+export AWS_DEFAULT_REGION="$region"
     echo "1. Add Instance"
     echo "2. Remove Instance"
     read input
