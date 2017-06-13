@@ -75,19 +75,22 @@ perform() {
     read input
     
     echo "Enter Load Balancer  Name"
+    echo 
     aws elb describe-load-balancers | jq -r '.LoadBalancerDescriptions[].LoadBalancerName'
+    echo
     read lbname
 
 
     if [ $input == "1" ]; then
 
 echo "Dispatcher instances inside the selected Load Balancer"
+echo
         aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'
 echo
 	echo "Provide the instance-id Of Instance to Add"
-        
+    echo    
         aws ec2 describe-instances |jq -r '.Reservations[].Instances[] | [.InstanceId, .ClientToken]| @json'
-        
+        echo
         listinstance=`aws ec2 describe-instances |jq -r '.Reservations[].Instances[].InstanceId'`
       
     echo $listinstance 
@@ -99,9 +102,9 @@ echo
 			echo $i
         		if [ $instanceids != $i ]; then
         		echo "Instance id is innorrect.. Try Again.."
+                read instanceids
        	 		fi
 		done
-break
     	done
     echo "Checking Status of the instance"
 
@@ -116,7 +119,7 @@ echo "Instance ${instanceids} is $(getState)"
         sleep 1
         fi
         if [ "$(getState)" == "InService" ]; then
-            echo "Instance Already inside the Load Balancer $lbname"
+            echo "Instance inside the Load Balancer $lbname"
             exit 1
         fi
 set -x
