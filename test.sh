@@ -37,8 +37,9 @@ case "$1" in
         ;;
 esac
 }
-waitUntil () {
-            echo -n "Wait until state is $1"
+waitUntil ()
+{ 
+           echo -n "Wait until state is $1"
             while [ "$(getState)" != "$1" ]; do
                 echo -n "."
                 sleep 1
@@ -50,10 +51,13 @@ waitUntil () {
       getState () {
             aws elb describe-instance-health \
                 --load-balancer-name $lbname \
-                --instance $instanceids | jq '.InstanceStates[].State' -r
+                --instance $instanceids | jq '.InstanceStates[0].State' -r
         }
-        
-        
+       getstatee () {
+		aws elb describe-instance-health --load-balancer-name $lbname --instance $instanceids
+		
+	} 
+#       echo "$(getstatee)"
 echo "Registering"
         register () {
             aws elb register-instances-with-load-balancer \
@@ -70,20 +74,20 @@ echo "Registering"
         }
         
 perform() {
-
+echo $USER
 echo "Enter Region"
 read region
 export AWS_DEFAULT_REGION="$region"
+echo "$AWS_DEFAULT_REGION"
     echo "1. Add Instance"
     echo "2. Remove Instance"
     read input
-    
+   echo 
     echo "Enter Load Balancer  Name"
-    echo 
+    echo "$AWS_DEFAULT_REGION" 
     aws elb describe-load-balancers | jq -r '.LoadBalancerDescriptions[].LoadBalancerName'
     echo
     read lbname
-
 
     if [ $input == "1" ]; then
 
@@ -95,38 +99,47 @@ echo
     echo    
         aws ec2 describe-instances |jq -r '.Reservations[].Instances[] | [.InstanceId, .ClientToken]| @json'
         echo
-        listinstance=`aws ec2 describe-instances |jq -r '.Reservations[].Instances[].InstanceId'`
-      
-    echo $listinstance 
-    
-    while read instanceids
-        do
-		for i in ${listinstance[@]}
-		do
-			echo $i
-        		if [ $instanceids != $i ]; then
-        		echo "Instance id is innorrect.. Try Again.."
-                read instanceids
-       	 		fi
-		done
-    	done
-    echo "Checking Status of the instance"
+#aws ec2 describe-instances |jq -r '.Reservations[].Instances[].InstanceId' > "${listinstance}"
+listinstance=`aws ec2 describe-instances | jq -r '.Reservations[].Instances[].InstanceId'`
+#    echo "$listinstance"
+#list=`aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId]'`
+#echo "$list"
+while read -r instanceids;
+do        
+#echo `aws ec2 describe-instances | jq -r '.Reservations[].Instances[].InstanceId'` | grep -F "$instanceids"
+echo "$listinstance" | grep -Fxe "$instanceids"
 
-
-echo "Instance ${instanceids} is $(getState)"
+echo "$?"
+if [ "$?" == "0" ]; then
+break
+else
+echo "Instance not available... Try Again "
+fi
+done
+echo "Registering Instance $instanceids" 
+register
+sleep 1
+#echo "$(register)"
+echo "Checking Status of the instance"
+#echo "Instance ${instanceids} is $(getstatee)"
        if [ "$(getState)" == "OutOfService" ]; then
             register
             
-            waitUntil "InService"
-            lburl=`aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'`
-            curl $lburl &
+#            waitUntil "InService"
+#            lburl=`aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'`
+#            curl $lburl &
+aws elb describe-instance-health --load-balancer-name $lbname | jq -r '["       ID","        State"], ["     --------","        ------"], (.InstanceStates[]|[.InstanceId, .State]) | @tsv'
+exit
         sleep 1
-        fi
-        if [ "$(getState)" == "InService" ]; then
+        
+       elif [ "$(getState)" == "InService" ]; then
             echo "Instance inside the Load Balancer $lbname"
+aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].Instances[].InstanceId'
+echo "Instance status inside ELB" 
+aws elb describe-instance-health --load-balancer-name $lbname | jq -r '["       ID","        State"], ["     --------","        ------"], (.InstanceStates[]|[.InstanceId, .State]) | @tsv'
+
             exit 1
         fi
-set -x
     elif [ $input == "2" ]; then
 
 echo $lbname    
@@ -137,23 +150,27 @@ echo $lbname
    
    
    echo "Instance ${InstanceID} is $(getState)"
-
+echo "Removing..."
 
         if [ "$(getState)" == "OutOfService" ]; then
             deregister
             
-            waitUntil "OutOfService"
-            lburl=`aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'`
-            curl $lburl &
+#            waitUntil "OutOfService"
+#            lburl=`aws elb describe-load-balancers --load-balancer-name $lbname | jq -r '.LoadBalancerDescriptions[].DNSName'`
+#            curl $lburl &
         sleep 1
-        fi
-        if [ "$(getState)" == "InService" ]; then
+        elif [ "$(getState)" == "InService" ]; then
             deregister
-            
-            waitUntil "OutOfService"
+            sleep 1
+#            waitUntil "OutOfService"
             fi
-	fi
+echo "Instance status inside ELB " 
+aws elb describe-instance-health --load-balancer-name $lbname | jq -r '["       ID","        State"], ["     --------","        ------"], (.InstanceStates[]|[.InstanceId, .State]) | @tsv'
+	else
+exit
+fi
             
+
+
 }
-set +x
 main "$@"
