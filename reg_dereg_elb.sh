@@ -1,7 +1,7 @@
 #!/bin/bash
  
 set -e
-
+unset AWS_DEFAULT_PROFILE
 SELF="$(basename $0)"
 
 usage() {
@@ -61,7 +61,18 @@ waitUntil ()
 perform() {
 echo "Enter Region"
 read region
+declare -a list_region=`aws ec2 describe-regions| jq -r '.Regions[].RegionName'`
+echo "$list_region" | grep -Fxe "$region"
+
 export AWS_DEFAULT_REGION="$region"
+echo "Enter your profile"
+read profile
+if ! grep -q "^\[$profile\]$" ${HOME}/.aws/config ; then
+echo "Invalid Profile. Try Again"
+exit
+fi
+export AWS_DEFAULT_PROFILE="$profile"
+echo "$AWS_CONFIG_FILE"
     echo "1. Add Instance"
     echo "2. Remove Instance"
     read input
@@ -102,7 +113,7 @@ echo "Checking Status of the instance"
 echo
 #echo "Instance ${instanceids} is $(getstatee)"
        if [ "$(getState)" == "OutOfService" ]; then
-waitUntil "InService"
+#waitUntil "InService"
 aws elb describe-instance-health --load-balancer-name $lbname | jq -r '["       ID","        State"], ["     --------","        ------"], (.InstanceStates[]|[.InstanceId, .State]) | @tsv'
        elif [ "$(getState)" == "InService" ]; then
             echo "Instance inside the Load Balancer $lbname"
