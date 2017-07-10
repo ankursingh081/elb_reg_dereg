@@ -59,12 +59,6 @@ waitUntil ()
         }
         
 perform() {
-echo "Enter Region"
-read region
-declare -a list_region=`aws ec2 describe-regions| jq -r '.Regions[].RegionName'`
-echo "$list_region" | grep -Fxe "$region"
-
-export AWS_DEFAULT_REGION="$region"
 echo "Enter your profile"
 read profile
 if ! grep -q "^\[$profile\]$" ${HOME}/.aws/config ; then
@@ -72,7 +66,24 @@ echo "Invalid Profile. Try Again"
 exit
 fi
 export AWS_DEFAULT_PROFILE="$profile"
+
+echo "Enter Region"
+read region
+#declare -a list_region=`aws ec2 describe-regions| jq -r '.Regions[].RegionName'`
+#echo "$list_region" | grep -Fxe "$region"
+
+export AWS_DEFAULT_REGION="$region"
+echo "$AWS_DEFAULT_REGION"
+#echo "Enter your profile"
+#read profile
+#if ! grep -q "^\[$profile\]$" ${HOME}/.aws/config ; then
+#echo "Invalid Profile. Try Again"
+#exit
+#fi
+export AWS_DEFAULT_PROFILE="$profile"
+export AWS_CONFIG_FILE=${HOME}/.aws/config
 echo "$AWS_CONFIG_FILE"
+echo "$AWS_DEFAULT_PROFILE"
     echo "1. Add Instance"
     echo "2. Remove Instance"
     read input
@@ -96,16 +107,20 @@ echo
     echo    
         aws ec2 describe-instances |jq -r '.Reservations[].Instances[] | [.InstanceId, .ClientToken]| @json'
         echo
-listinstance=`aws ec2 describe-instances | jq -r '.Reservations[].Instances[].InstanceId'`
+declare -a listinstance=`aws ec2 describe-instances | jq -r '.Reservations[].Instances[].InstanceId'`
 while read -r instanceids;
 do        
-echo "$listinstance" | grep -Fxe "$instanceids"
-if [ "$?" == "0" ]; then
+#echo "$listinstance" | grep -Fxe "$instanceids"
+set -x
+if ! grep -c -w "$instanceids" <<< "$listinstance"; then
+#if [ "$?" == "0" ]; then
+echo "Instance does not Exist. Try Again..."
 break
-else
-echo "Instance not available... Try Again "
+#else
+#echo "Instance not available... Try Again "
 fi
 done
+set +x
 echo "Registering Instance $instanceids" 
 register >>/dev/null
 sleep 1
